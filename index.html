@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>My Wishlist</title>
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --fg: #000;
+      --card: #fff;
+      --accent: #4CAF50;
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --fg: #fff;
+      --card: #1e1e1e;
+      --accent: #81c784;
+    }
+
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 2em;
+      background: var(--bg);
+      color: var(--fg);
+      transition: all 0.3s;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1em;
+      left: 1em;
+    }
+
+    .csv-buttons {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      display: flex;
+      gap: 0.5em;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 1em;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="range"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 0.3em;
+    }
+
+    #wantLevel {
+      margin-top: 0.3em;
+      width: 100%;
+    }
+
+    #addBtn {
+      margin-top: 1em;
+      padding: 10px;
+      width: 100%;
+      font-weight: bold;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 2em;
+      border-collapse: collapse;
+      background-color: var(--card);
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .color-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .delete-btn {
+      background: none;
+      color: red;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
+    #sortSelect {
+      width: 100%;
+      margin-top: 2em;
+      padding: 10px;
+    }
+
+    #totals {
+      margin-bottom: 1em;
+      text-align: center;
+      font-size: 1.1em;
+    }
+
+    #passwordOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    #passwordOverlay input {
+      padding: 0.5em;
+      font-size: 1em;
+      margin-top: 0.5em;
+    }
+  </style>
+</head>
+
+<body data-theme="light">
+  <div id="passwordOverlay">
+    <h2>Enter Password to Access Wishlist</h2>
+    <input type="password" id="passwordInput" placeholder="Enter password">
+  </div>
+
+  <button class="theme-toggle" onclick="toggleTheme()">🌗</button>
+  <div class="csv-buttons">
+    <button onclick="downloadCSV()">⬇️ CSV</button>
+    <input type="file" id="csvUpload" accept=".csv" />
+  </div>
+
+  <h1>🎁 My Wishlist</h1>
+  <div id="totals">
+    💰 Total of All Items: <span id="totalAll">$0.00</span><br>
+    ✅ Total of Bought Items: <span id="totalBought">$0.00</span>
+    <br><br>
+   <button id="downloadCSVFromGitHub" style="margin-top: 10px; background-color: #4CAF50; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">
+  ⬇️ Download Latest CSV
+</button>
+  </div>
+
+  <script>
+document.getElementById("downloadCSVFromGitHub").addEventListener("click", () => {
+  const fileUrl = "https://raw.githubusercontent.com/Ecobobtrev2/listWant/main/wishlist.csv";
+
+  fetch(fileUrl)
+    .then(response => response.blob())
+    .then(blob => {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = "wishlist.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    })
+    .catch(() => alert("Failed to download CSV. Make sure the link is correct."));
+});
+</script>
+
+  <label for="itemName">Item Name</label>
+  <input type="text" id="itemName" placeholder="e.g. AirPods Pro 2" />
+
+  <label for="itemLink">Item Link</label>
+  <input type="text" id="itemLink" placeholder="Paste the link here" />
+
+  <label for="itemPrice">Price ($)</label>
+  <input type="number" id="itemPrice" placeholder="e.g. 249" />
+
+  <label for="wantLevel">How much do you want it? (Choose)</label>
+  <input type="range" min="0" max="100" value="50" id="wantLevel" />
+
+  <button id="addBtn">➕ Add to Wishlist</button>
+
+  <select id="sortSelect">
+    <option value="none">🔀 Sort Wishlist</option>
+    <option value="priceAsc">💸 Price: Low → High</option>
+    <option value="priceDesc">💰 Price: High → Low</option>
+    <option value="desireHigh">💚 Most Wanted → Least</option>
+    <option value="desireLow">🧊 Least Wanted → Most</option>
+    <option value="az">🔤 Name: A → Z</option>
+    <option value="za">🔠 Name: Z → A</option>
+  </select>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Link</th>
+        <th>Price</th>
+        <th>Desire</th>
+        <th>Bought</th>
+        <th>❌</th>
+      </tr>
+    </thead>
+    <tbody id="wishlistTable"></tbody>
+  </table>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const imageInput = document.getElementById("imageInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const totalAllEl = document.getElementById("totalAll");
+    const totalBoughtEl = document.getElementById("totalBought");
+    const csvUpload = document.getElementById("csvUpload");
+    let imageDataURL = "";
+    let wishlist = [];
+
+    function toggleTheme() {
+      const body = document.body;
+      const isDark = body.getAttribute("data-theme") === "dark";
+      body.setAttribute("data-theme", isDark ? "light" : "dark");
+    }
+
+    function getColorFromValue(val) {
+      let hue = val * 1.2;
+      return `hsl(${hue}, 100%, 50%)`;
+    }
+
+    function updateTotals() {
+      const totalAll = wishlist.reduce((sum, item) => sum + item.price, 0);
+      const totalBought = wishlist.filter(item => item.bought).reduce((sum, item) => sum + item.price, 0);
+      totalAllEl.textContent = `$${totalAll.toFixed(2)}`;
+      totalBoughtEl.textContent = `$${totalBought.toFixed(2)}`;
+    }
+
+    function renderTable(data) {
+      const table = document.getElementById("wishlistTable");
+      table.innerHTML = "";
+      data.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td><a href="${item.link}" target="_blank">🔗 Link</a></td>
+          <td>$${parseFloat(item.price).toFixed(2)}</td>
+          <td><div class="color-box" style="background-color: ${getColorFromValue(item.desire)}" title="${item.desire}%"></div></td>
+          <td><input type="checkbox" ${item.bought ? "checked" : ""} data-index="${index}" class="bought-toggle" /></td>
+          <td><button class="delete-btn" data-index="${index}">✖</button></td>
+        `;
+        table.appendChild(row);
+      });
+      updateTotals();
+    }
+
+    document.getElementById("addBtn").addEventListener("click", () => {
+      const name = document.getElementById("itemName").value.trim();
+      const link = document.getElementById("itemLink").value.trim();
+      const price = parseFloat(document.getElementById("itemPrice").value);
+      const desire = parseInt(document.getElementById("wantLevel").value);
+
+      if (!name || !link || isNaN(price)) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      wishlist.push({ name, link, price, desire, bought: false, image: imageDataURL });
+      renderTable(wishlist);
+
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemLink").value = "";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("wantLevel").value = 50;
+    });
+
+    sortSelect.addEventListener("change", () => sortWishlist(sortSelect.value));
+
+    document.getElementById("wishlistTable").addEventListener("click", e => {
+      if (e.target.classList.contains("delete-btn")) {
+        wishlist.splice(parseInt(e.target.dataset.index), 1);
+        renderTable(wishlist);
+      } else if (e.target.classList.contains("bought-toggle")) {
+        const i = parseInt(e.target.dataset.index);
+        wishlist[i].bought = e.target.checked;
+        updateTotals();
+      }
+    });
+
+    function downloadCSV() {
+      const csv = ["name,link,price,desire,bought,image"];
+      wishlist.forEach(item => {
+        csv.push(`${item.name},${item.link},${item.price},${item.desire},${item.bought},${item.image}`);
+      });
+      const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "wishlist.csv";
+      a.click();
+    }
+
+    csvUpload.addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const lines = e.target.result.split("\n").filter(Boolean);
+        lines.shift(); // Remove header
+        wishlist = lines.map(line => {
+          const [name, link, price, desire, bought, image] = line.split(",");
+          return {
+            name,
+            link,
+            price: parseFloat(price),
+            desire: parseInt(desire),
+            bought: bought === "true",
+            image
+          };
+        });
+        renderTable(wishlist);
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById("passwordInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        if (this.value === "want") {
+          document.getElementById("passwordOverlay").style.display = "none";
+        } else {
+          alert("Incorrect password!");
+        }
+      }
+    });
+
+    function sortWishlist(type) {
+      switch (type) {
+        case "priceAsc":
+          wishlist.sort((a, b) => a.price - b.price);
+          break;
+        case "priceDesc":
+          wishlist.sort((a, b) => b.price - a.price);
+          break;
+        case "desireHigh":
+          wishlist.sort((a, b) => b.desire - a.desire);
+          break;
+        case "desireLow":
+          wishlist.sort((a, b) => a.desire - b.desire);
+          break;
+        case "az":
+          wishlist.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case "za":
+          wishlist.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+        default:
+          break;
+      }
+      renderTable(wishlist);
+    }
+
+  </script>
+</body>
+
+</html>
